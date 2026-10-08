@@ -7,8 +7,7 @@ Start any request with **"Tira"**:
 > "Tira, what's on my Costco shopping list?"
 > "Tira, request a ride to my appointment"
 
-Tira reuses the dialogue engine from the **Day Buddy** Alexa skill. It runs entirely on the
-phone: you don't need Alexa, AWS, or a server, and your data never leaves the device.
+Tira runs entirely on the phone: you don't need Alexa, AWS, or a server, and your data never leaves the device.
 
 ---
 
