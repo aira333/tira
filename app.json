@@ -1,24 +1,64 @@
 {
   "expo": {
-    "name": "tira",
+    "name": "Tira",
     "slug": "tira",
+    "scheme": "tira",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B1220",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tira.assistant",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": [
+          "tel"
+        ]
+      }
     },
     "android": {
+      "package": "com.tira.assistant",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0B1220",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "blockedPermissions": [
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.USE_EXACT_ALARM"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Tira listens to your voice so you can manage appointments, lists, and rides hands-free.",
+          "speechRecognitionPermission": "Tira turns your speech into text to understand your requests.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#FBBF24",
+          "defaultChannel": "appointment-reminders"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
     }
   }
 }
