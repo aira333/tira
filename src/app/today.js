@@ -1,23 +1,19 @@
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { store } from '../engine';
+import { confirm } from '../tira/confirm';
+import { devicePlatform } from '../tira/device';
 import { useTira } from '../tira/TiraProvider';
-import { colors, space, type } from '../tira/theme';
+import { colors, gradients, radius, space, type } from '../tira/theme';
 
 const USER_ID = 'device-user';
 
 function titleCase(s) {
   return String(s || '').replace(/\b([a-z])/g, (c) => c.toUpperCase());
-}
-
-function formatWhen(apt) {
-  const d = new Date(apt.dateTime);
-  if (Number.isNaN(d.getTime())) return `${apt.date} ${apt.time}`;
-  const date = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  return `${date} at ${time}`;
 }
 
 function doctorLabel(name) {
@@ -30,44 +26,118 @@ function realLocation(loc) {
   return l && !/^(not specified|none|no location)$/i.test(l) ? l : '';
 }
 
-function Section({ title, empty, children, count }) {
+function reminderLabel(min) {
+  if (!min) return null;
+  if (min >= 1440) return '1 day before';
+  if (min >= 60) return '1 hour before';
+  return `${min} min before`;
+}
+
+function isToday(iso) {
+  return new Date(iso).toDateString() === new Date().toDateString();
+}
+
+function Section({ title, subtitle, children, empty, count }) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle} accessibilityRole="header">
-        {title}
-        {count ? ` (${count})` : ''}
-      </Text>
-      {count ? children : <Text style={styles.empty}>{empty}</Text>}
+      <View style={styles.sectionHead}>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          {title}
+        </Text>
+        {count ? (
+          <View style={styles.countPill}>
+            <Text style={styles.countText}>{count}</Text>
+          </View>
+        ) : null}
+      </View>
+      {subtitle ? <Text style={styles.sectionSub}>{subtitle}</Text> : null}
+      {count ? children : <EmptyCard text={empty} />}
     </View>
   );
 }
 
-function ListCard({ name, list, table, onChanged }) {
-  const items = list.items || [];
-  const toggle = async (index) => {
-    const item = items[index];
-    const update = item.completed
-      ? { completed: false, completedAt: null }
-      : { completed: true, completedAt: new Date().toISOString() };
-    if (table === 'shopping') await store.updateItemInList(USER_ID, list.listId, index, update);
-    else await store.updateTodoItemInList(USER_ID, list.listId, index, update);
-    onChanged();
-  };
+function EmptyCard({ text }) {
+  return (
+    <View style={styles.emptyCard}>
+      <Text style={styles.emptyText}>{text}</Text>
+    </View>
+  );
+}
+
+function AppointmentCard({ apt, onDelete }) {
+  const d = new Date(apt.dateTime);
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const weekday = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+  const longDate = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const loc = realLocation(apt.location);
+  const reminder = reminderLabel(apt.reminderLeadMinutes);
+  const today = isToday(apt.dateTime);
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{titleCase(name)}</Text>
-      {items.length === 0 ? <Text style={styles.empty}>No items.</Text> : null}
+    <View
+      style={styles.aptCard}
+      accessible
+      accessibilityLabel={`${doctorLabel(apt.doctorName)}, ${longDate} at ${time}${loc ? `, at ${loc}` : ''}${reminder ? `, reminder ${reminder}` : ''}`}
+      accessibilityActions={[{ name: 'delete', label: 'Delete appointment' }]}
+      onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && onDelete(apt)}
+    >
+      <LinearGradient colors={today ? gradients.accent : gradients.card} style={styles.dateTile}>
+        <Text style={[styles.tileDay, today && styles.tileInk]}>{today ? 'TODAY' : weekday}</Text>
+        <Text style={[styles.tileNum, today && styles.tileInk]}>{d.getDate()}</Text>
+      </LinearGradient>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={styles.aptTitle}>{doctorLabel(apt.doctorName)}</Text>
+        <Text style={styles.aptTime}>{today ? time : `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · ${time}`}</Text>
+        {loc ? <Text style={styles.aptMeta}>📍 {loc}</Text> : null}
+        {reminder ? <Text style={styles.aptMeta}>🔔 {reminder}</Text> : null}
+      </View>
+      <Pressable
+        onPress={() => onDelete(apt)}
+        hitSlop={10}
+        accessibilityRole="button"
+        accessibilityLabel={`Delete appointment with ${doctorLabel(apt.doctorName)}`}
+        style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.6 }]}
+      >
+        <Text style={styles.deleteGlyph}>✕</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function ListCard({ name, list, kind, onToggle, onRemove }) {
+  const items = list.items || [];
+  const done = items.filter((i) => i.completed).length;
+  const pct = items.length ? done / items.length : 0;
+
+  return (
+    <View style={styles.listCard}>
+      <View style={styles.listHead}>
+        <Text style={styles.listTitle}>
+          {kind === 'shopping' ? '🛒' : '✅'} {titleCase(name)}
+        </Text>
+        <Text style={styles.listProgress}>
+          {done}/{items.length}
+        </Text>
+      </View>
+      <View style={styles.bar} accessible={false}>
+        <View style={[styles.barFill, { width: `${pct * 100}%` }]} />
+      </View>
+      {items.length === 0 ? <Text style={styles.emptyText}>No items.</Text> : null}
       {items.map((item, i) => (
         <Pressable
           key={item.itemId || `${item.name}-${i}`}
-          onPress={() => toggle(i)}
+          onPress={() => onToggle(list, i)}
+          onLongPress={() => onRemove(list, i)}
+          delayLongPress={450}
           style={({ pressed }) => [styles.item, pressed && { opacity: 0.6 }]}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: Boolean(item.completed) }}
           accessibilityLabel={item.name}
+          accessibilityHint="Double tap to check off. Long press to remove."
         >
-          <Text style={[styles.check, item.completed && styles.checkOn]}>{item.completed ? '✓' : ''}</Text>
+          <View style={[styles.check, item.completed && styles.checkOn]}>
+            {item.completed ? <Text style={styles.checkMark}>✓</Text> : null}
+          </View>
           <Text style={[styles.itemText, item.completed && styles.itemDone]}>{item.name}</Text>
         </Pressable>
       ))}
@@ -76,7 +146,7 @@ function ListCard({ name, list, table, onChanged }) {
 }
 
 export default function TodayScreen() {
-  const { dataVersion } = useTira();
+  const { dataVersion, refreshData } = useTira();
   const [appointments, setAppointments] = useState([]);
   const [shopping, setShopping] = useState([]);
   const [todos, setTodos] = useState([]);
@@ -103,96 +173,204 @@ export default function TodayScreen() {
     load();
   }, [dataVersion, load]);
 
+  const changed = () => {
+    load();
+    refreshData();
+  };
+
+  const deleteAppointment = async (apt) => {
+    const ok = await confirm(
+      'Delete appointment?',
+      `${doctorLabel(apt.doctorName)} on ${new Date(apt.dateTime).toLocaleString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      })}`,
+    );
+    if (!ok) return;
+    if (apt.alexaReminderId) await devicePlatform.cancelReminder({ id: apt.alexaReminderId }).catch(() => {});
+    await store.deleteAppointment(USER_ID, apt.appointmentId);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    changed();
+  };
+
+  const toggleItem = async (kind, list, index) => {
+    const item = list.items[index];
+    const update = item.completed
+      ? { completed: false, completedAt: null }
+      : { completed: true, completedAt: new Date().toISOString() };
+    if (kind === 'shopping') await store.updateItemInList(USER_ID, list.listId, index, update);
+    else await store.updateTodoItemInList(USER_ID, list.listId, index, update);
+    Haptics.selectionAsync().catch(() => {});
+    changed();
+  };
+
+  const removeItem = async (kind, list, index) => {
+    const item = list.items[index];
+    const ok = await confirm('Remove item?', `Remove "${item.name}" from ${titleCase(list.storeName || list.listName)}?`, 'Remove');
+    if (!ok) return;
+    const next = { ...list, items: list.items.filter((_, i) => i !== index) };
+    if (kind === 'shopping') await store.saveShoppingList(USER_ID, next);
+    else await store.saveTodoList(USER_ID, next);
+    changed();
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
     await load();
     setRefreshing(false);
   };
 
+  const todayApts = appointments.filter((a) => isToday(a.dateTime));
+  const laterApts = appointments.filter((a) => !isToday(a.dateTime));
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
-    >
-      <Section
-        title="Upcoming appointments"
-        count={appointments.length}
-        empty='None yet. Say "Tira, add an appointment".'
+    <LinearGradient colors={gradients.screen} style={{ flex: 1 }}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
       >
-        {appointments.map((apt) => (
-          <View
-            key={apt.appointmentId}
-            style={styles.card}
-            accessible
-            accessibilityLabel={`${doctorLabel(apt.doctorName)}, ${formatWhen(apt)}${realLocation(apt.location) ? `, at ${realLocation(apt.location)}` : ''}`}
-          >
-            <Text style={styles.cardTitle}>{doctorLabel(apt.doctorName)}</Text>
-            <Text style={styles.cardLine}>{formatWhen(apt)}</Text>
-            {realLocation(apt.location) ? <Text style={styles.cardMuted}>{realLocation(apt.location)}</Text> : null}
-            {apt.reminderLeadMinutes ? (
-              <Text style={styles.cardMuted}>
-                Reminder {apt.reminderLeadMinutes >= 1440 ? '1 day' : apt.reminderLeadMinutes >= 60 ? '1 hour' : `${apt.reminderLeadMinutes} minutes`} before
-              </Text>
-            ) : null}
-          </View>
-        ))}
-      </Section>
+        <Section title="Today" count={todayApts.length} empty="No appointments today. Enjoy your day!">
+          {todayApts.map((apt) => (
+            <AppointmentCard key={apt.appointmentId} apt={apt} onDelete={deleteAppointment} />
+          ))}
+        </Section>
 
-      <Section
-        title="Shopping lists"
-        count={shopping.length}
-        empty='None yet. Say "Tira, add milk to my Target list".'
-      >
-        {shopping.map((list) => (
-          <ListCard key={list.listId} name={list.storeName} list={list} table="shopping" onChanged={load} />
-        ))}
-      </Section>
+        <Section
+          title="Coming up"
+          count={laterApts.length}
+          empty='Nothing scheduled. Say "Tira, add an appointment".'
+        >
+          {laterApts.map((apt) => (
+            <AppointmentCard key={apt.appointmentId} apt={apt} onDelete={deleteAppointment} />
+          ))}
+        </Section>
 
-      <Section
-        title="To-do lists"
-        count={todos.length}
-        empty='None yet. Say "Tira, add call the pharmacy to my to do list".'
-      >
-        {todos.map((list) => (
-          <ListCard key={list.listId} name={list.listName} list={list} table="todo" onChanged={load} />
-        ))}
-      </Section>
-    </ScrollView>
+        <Section
+          title="Shopping"
+          subtitle={shopping.length ? 'Tap to check off · long press to remove' : null}
+          count={shopping.length}
+          empty='No lists yet. Say "Tira, add milk to my Target list".'
+        >
+          {shopping.map((list) => (
+            <ListCard
+              key={list.listId}
+              kind="shopping"
+              name={list.storeName}
+              list={list}
+              onToggle={(l, i) => toggleItem('shopping', l, i)}
+              onRemove={(l, i) => removeItem('shopping', l, i)}
+            />
+          ))}
+        </Section>
+
+        <Section
+          title="To-dos"
+          subtitle={todos.length ? 'Tap to check off · long press to remove' : null}
+          count={todos.length}
+          empty='No to-dos yet. Say "Tira, add call the pharmacy to my to do list".'
+        >
+          {todos.map((list) => (
+            <ListCard
+              key={list.listId}
+              kind="todo"
+              name={list.listName}
+              list={list}
+              onToggle={(l, i) => toggleItem('todo', l, i)}
+              onRemove={(l, i) => removeItem('todo', l, i)}
+            />
+          ))}
+        </Section>
+      </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space(2), gap: space(3), paddingBottom: space(6) },
   section: { gap: space(1.5) },
-  sectionTitle: { color: colors.text, fontSize: type.heading, fontWeight: '700' },
-  empty: { color: colors.textMuted, fontSize: type.small, lineHeight: 24 },
-  card: {
+  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: space(1) },
+  sectionTitle: { color: colors.text, fontSize: type.heading + 2, fontWeight: '800' },
+  sectionSub: { color: colors.textMuted, fontSize: type.tiny, marginTop: -space(1) },
+  countPill: {
+    backgroundColor: colors.accent,
+    borderRadius: radius.pill,
+    minWidth: 28,
+    paddingHorizontal: 8,
+    height: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countText: { color: colors.accentText, fontWeight: '800', fontSize: type.tiny },
+  emptyCard: {
+    borderRadius: radius.card,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.border,
+    padding: space(2),
+  },
+  emptyText: { color: colors.textMuted, fontSize: type.small, lineHeight: 24 },
+
+  aptCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space(2),
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: space(1.5),
+  },
+  dateTile: { width: 68, height: 72, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  tileDay: { color: colors.accent, fontSize: 12, fontWeight: '800', letterSpacing: 1 },
+  tileNum: { color: colors.text, fontSize: 28, fontWeight: '900' },
+  tileInk: { color: colors.accentText },
+  aptTitle: { color: colors.text, fontSize: type.body, fontWeight: '800' },
+  aptTime: { color: colors.text, fontSize: type.small },
+  aptMeta: { color: colors.textMuted, fontSize: type.tiny },
+  deleteBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceRaised,
+  },
+  deleteGlyph: { color: colors.textMuted, fontSize: 18, fontWeight: '800' },
+
+  listCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.border,
     padding: space(2),
     gap: space(0.5),
   },
-  cardTitle: { color: colors.text, fontSize: type.body, fontWeight: '700' },
-  cardLine: { color: colors.text, fontSize: type.body },
-  cardMuted: { color: colors.textMuted, fontSize: type.small },
+  listHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  listTitle: { color: colors.text, fontSize: type.body, fontWeight: '800' },
+  listProgress: { color: colors.textMuted, fontSize: type.small, fontWeight: '700' },
+  bar: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.surfaceRaised,
+    overflow: 'hidden',
+    marginVertical: space(1),
+  },
+  barFill: { height: 6, borderRadius: 3, backgroundColor: colors.listening },
   item: { flexDirection: 'row', alignItems: 'center', gap: space(1.5), minHeight: 48 },
   check: {
     width: 28,
     height: 28,
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 2,
     borderColor: colors.textMuted,
-    color: colors.accentText,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '900',
-    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  checkOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+  checkOn: { backgroundColor: colors.listening, borderColor: colors.listening },
+  checkMark: { color: colors.accentText, fontSize: 17, fontWeight: '900' },
   itemText: { color: colors.text, fontSize: type.body, flexShrink: 1 },
   itemDone: { color: colors.textMuted, textDecorationLine: 'line-through' },
 });

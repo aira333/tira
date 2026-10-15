@@ -1,6 +1,14 @@
-# Tira
+<p align="center">
+  <img src="docs/screenshots/icon.png" width="96" alt="Tira app icon" />
+</p>
 
-A voice-first phone assistant for appointments, rides, shopping lists, and to-dos.
+<h1 align="center">Tira</h1>
+
+<p align="center">
+  A voice-first phone assistant for appointments, rides, shopping lists, and to-dos.<br/>
+  Built for people who'd rather talk than tap: large text, high contrast, and every answer spoken aloud.
+</p>
+
 Start any request with **"Tira"**:
 
 > "Tira, add an appointment with Dr. Smith tomorrow at 2 PM"
@@ -9,6 +17,35 @@ Start any request with **"Tira"**:
 
 Tira reuses the dialogue engine from the **Day Buddy** Alexa skill. It runs entirely on the
 phone: you don't need Alexa, AWS, or a server, and your data never leaves the device.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center" width="33%"><img src="docs/screenshots/talk-home.png" width="240" alt="Talk screen: greeting, Up next card with today's appointment and counts, mic button" /><br/><b>Talk</b><br/><sub>Greeting, Up next card, big mic button</sub></td>
+    <td align="center" width="33%"><img src="docs/screenshots/talk-briefing.png" width="240" alt="Talk screen showing the spoken daily briefing" /><br/><b>Daily briefing</b><br/><sub>"Tira, what's my day?"</sub></td>
+    <td align="center" width="33%"><img src="docs/screenshots/my-day-appointments.png" width="240" alt="My Day screen with today's and upcoming appointments" /><br/><b>My Day: appointments</b><br/><sub>Today and coming up, with reminders</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/my-day-lists.png" width="240" alt="My Day screen with shopping and to-do lists and progress bars" /><br/><b>My Day: lists</b><br/><sub>Tap to check off, long-press to remove</sub></td>
+    <td align="center"><img src="docs/screenshots/settings.png" width="240" alt="Settings screen with hands-free, spoken replies, speaking speed and test voice" /><br/><b>Settings</b><br/><sub>Hands-free, voice speed, test voice</sub></td>
+    <td align="center"><img src="assets/icon.png" width="240" alt="Tira app icon: amber orb with a T and sound waves on navy" /><br/><b>App icon</b><br/><sub>Also used for the splash screen</sub></td>
+  </tr>
+</table>
+
+<sub>Screenshots are from the web build (`npm run web`) at phone size. On a phone, the app looks the same, apart from the system status bar.</sub>
+
+## Features
+
+- 🗓️ **Appointments:** add, list, find, reschedule and delete by voice. Reminders arrive as phone notifications.
+- 🌅 **Daily briefing:** "What's my day?" reads today's appointments, open to-dos and your shopping count.
+- ⏭️ **What's next:** your next appointment in one sentence.
+- 🛒 **Shopping lists** by store, and ✅ **to-do lists** by name: add, read, check off, clear.
+- 🚗 **Rides:** saves your transport service, confirms the details, then opens the dialer and tells you what to say.
+- 🔁 **Repeat:** "Repeat that", or the Repeat button, replays the last answer, even mid-question.
+- 🎙️ **Hands-free wake word:** with the app open, say "Tira, …" without touching the screen.
+- ♿ **Accessible:** large type, high contrast, screen-reader labels on everything, and a haptic tap when Tira hears you.
+- 🔒 **Private:** everything is stored on the phone. No account, no server.
 
 ---
 
@@ -25,6 +62,7 @@ phone: you don't need Alexa, AWS, or a server, and your data never leaves the de
 9. [Troubleshooting](#9-troubleshooting)
 10. [How it works](#10-how-it-works)
 11. [Project layout](#11-project-layout)
+12. [Changelog](#12-changelog)
 
 ---
 
@@ -70,7 +108,7 @@ The conversation engine runs under plain Node, so you can test it without a phon
 npm test
 ```
 
-You should see `12 passed, 0 failed`. To print every turn of every conversation:
+You should see `16 passed, 0 failed`. To print every turn of every conversation:
 
 ```bash
 npm run test:verbose
@@ -160,9 +198,9 @@ Opens at http://localhost:8081. Voice input works in Chrome; reminders and the p
 
 ### Screens
 
-- **Talk:** tap the big mic and speak, or type in the box. Tira replies on screen and out loud.
-- **My Day:** upcoming appointments and your lists. Tap a list item to check it off.
-- **Settings:** hands-free mode, speaking speed, your saved info, and erasing all data.
+- **Talk:** a greeting and an **Up next** card at the top. Tap the big mic and speak, tap a quick-action chip, or press **Type** to use the keyboard. **Repeat** replays Tira's last answer.
+- **My Day:** today's and upcoming appointments (tap ✕ to delete one, which also cancels its reminder) and your lists with progress bars. Tap an item to check it off; long-press to remove it.
+- **Settings:** hands-free mode, speaking speed, **Test voice**, your saved info, and erasing all data.
 
 ### Things to say
 
@@ -173,7 +211,8 @@ Opens at http://localhost:8081. Voice input works in Chrome; reminders and the p
 | To-dos | "Add call the pharmacy to my errands to do list" · "What's on my to do list?" |
 | Rides | "My transport is Care Ride, number 555 123 4567" (one-time setup) · "Request a ride to my appointment" · "Request a ride to the library tomorrow at 10 am" |
 | You | "My name is Sam" · "What is my name?" · "Use brief lists" |
-| Anytime | "Help" · "Cancel" (stops the current question) · "Stop" |
+| Your day | "What's my day?" (spoken briefing: today's appointments, to-dos, shopping) · "What's next?" · "What time is it?" · "What's the date?" |
+| Anytime | "Repeat that" (works mid-question too) · "Help" · "Cancel" (stops the current question) · "Stop" · "Thank you" |
 
 ### Voice behavior
 
@@ -213,7 +252,7 @@ In `app.json`:
 |---|---|---|
 | `expo.android.package` | `com.tira.assistant` | A unique ID you own, e.g. `com.yourname.tira`. **Can't be changed after the first Play Store upload.** |
 | `expo.ios.bundleIdentifier` | `com.tira.assistant` | Same as above |
-| `expo.icon`, `expo.android.adaptiveIcon.*` | Expo placeholder images in `assets/` | Your own icon (1024×1024 PNG) |
+| `expo.icon`, `expo.android.adaptiveIcon.*` | Tira icon in `assets/` (amber orb on navy) | Optional: your own 1024×1024 PNGs with the same file names |
 
 ### Microphone and speech permission text
 
@@ -245,7 +284,7 @@ Send them the link EAS prints. The build profiles live in `eas.json`:
 ### Before you start
 
 - [ ] Set your own `android.package` in `app.json` (see [Configure](#6-configure))
-- [ ] Replace the placeholder icons in `assets/`
+- [x] App icon and splash screen (done; the Play Store icon is `assets/store-icon-512.png`)
 - [ ] Publish a privacy policy page (required: Tira uses the microphone and stores personal data)
 - [ ] Prepare store graphics: 512×512 icon, 1024×500 feature graphic, at least 2 phone screenshots
 
@@ -331,6 +370,8 @@ Tira speaks ◄── expo-speech ◄── "I've added milk to your Target list
 tira/
 ├── app.json                 # App name, package ID, permissions, plugins
 ├── eas.json                 # Cloud build + Play Store submit profiles
+├── assets/                  # App icon, adaptive icons, splash, store icon
+├── docs/screenshots/        # Screenshots used in this README
 ├── src/
 │   ├── app/                 # Screens (Expo Router)
 │   │   ├── _layout.js       # Bottom tabs
@@ -341,16 +382,22 @@ tira/
 │   │   ├── TiraProvider.js  # Conversation state + voice loop (wake word, follow-ups)
 │   │   ├── voice.js         # Speech in / speech out
 │   │   ├── device.js        # Storage, notifications, dialer
-│   │   └── theme.js         # High-contrast colors, large type
+│   │   ├── confirm.js       # Yes/no dialogs (phone + web)
+│   │   ├── theme.js         # High-contrast colors, gradients, large type
+│   │   └── components/
+│   │       └── MicOrb.js    # Animated talk button
 │   └── engine/              # Ported Day Buddy engine (plain JS, runs in Node too)
 │       ├── index.js         # createTira(): text in → speech out
+│       ├── extras.js        # Daily briefing, what's next, time/date, repeat, thanks
 │       ├── brand.js         # Name + wake word
 │       ├── ask.js           # Stand-in for the few Alexa SDK helpers the engine uses
 │       ├── platform.js      # Device hooks injected by the app
 │       ├── store/           # On-device database
 │       ├── dialogue/        # Classifier, dispatcher, multi-turn flows
 │       └── modules/         # Appointments, shopping, to-do, rides, profile
-└── test/conversation.test.js
+└── test/
+    ├── conversation.test.js # 16 scripted conversations (npm test)
+    └── chat.js              # Terminal chat with spoken replies (npm run chat)
 ```
 
 ### Scripts
@@ -359,9 +406,50 @@ tira/
 |---|---|
 | `npm test` | Run the scripted conversation tests |
 | `npm run test:verbose` | Same, printing every turn |
+| `npm run chat` | Talk to Tira in the terminal. Replies are spoken aloud with your computer's voice (no phone needed; data resets on quit) |
+| `npm run chat -- --mute` | Same, text only |
 | `npm start` | Start the dev server (for a development build) |
 | `npm run start:go` | Start the dev server for Expo Go |
 | `npm run android` | Build and run on Android locally (needs Android Studio) |
 | `npm run ios` | Build and run on iOS locally (needs a Mac with Xcode) |
 | `npm run web` | Run in the browser |
 | `npm run lint` | Lint the code |
+
+---
+
+## 12. Changelog
+
+### v1.1: features and redesign
+
+**New things to say**
+- "What's my day?" (also "brief me", "good morning, what's on today?") gives a spoken daily briefing.
+- "What's next?" names your next appointment.
+- "Repeat that" / "say that again" works anywhere, including in the middle of a question.
+- "What time is it?", "What's the date?" and "Thank you".
+
+**Talk screen**
+- A greeting with your name and today's date.
+- An **Up next** card: your next appointment, plus counts for today, to-dos and items to buy. Tap it to open My Day.
+- A redesigned mic button: an amber orb that pulses green while listening and "breathes" while Tira speaks.
+- Scrollable quick-action chips, plus **Repeat** and **Type** buttons.
+
+**My Day**
+- Appointments split into **Today** and **Coming up**, with date tiles, location and reminder details.
+- Delete an appointment with ✕ (it asks first). This also cancels its reminder.
+- Lists show progress bars. Tap to check off, long-press to remove.
+
+**Settings**
+- **Test voice** button and an **About** section.
+
+**App**
+- New app icon, Android adaptive and themed icons, a splash screen, and the 512px Play Store icon (`assets/store-icon-512.png`).
+- The tab bar now makes room for the phone's gesture bar, and labels are no longer clipped.
+- Updated Expo packages to the latest SDK 57 patch versions.
+- Tests: 16 scripted conversations (up from 12).
+
+### v1.0: first version
+- Ported the Day Buddy Alexa skill's dialogue engine to a standalone Expo app with the wake word "Tira".
+- DynamoDB → on-device storage; Alexa Reminders → local notifications; Twilio bridge → phone dialer.
+- Talk, My Day and Settings screens; hands-free mode; follow-up questions reopen the mic.
+- Fixed UTC ride dates, garbled ride requests, ISO dates in speech, store names being missed in shopping requests, and a storage loading race.
+- Terminal chat with spoken replies (`npm run chat`).

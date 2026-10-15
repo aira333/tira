@@ -224,6 +224,25 @@ export function TiraProvider({ children }) {
 
   const refreshData = useCallback(() => setDataVersion((v) => v + 1), []);
 
+  /** Structured "my day" summary for the home card. */
+  const [briefing, setBriefing] = useState(null);
+  useEffect(() => {
+    if (!ready || !tiraRef.current) return;
+    tiraRef.current.briefing().then(setBriefing).catch(() => {});
+  }, [ready, dataVersion]);
+
+  /** Say Tira's last reply again (button + "repeat that"). */
+  const repeatLast = useCallback(() => {
+    const last = [...messages].reverse().find((m) => m.from === 'tira');
+    if (!last) return;
+    cancelListening();
+    stopSpeaking();
+    setStatus('speaking');
+    speak(last.text, { rate: settingsRef.current.speechRate }).then(() =>
+      setStatus((st) => (st === 'speaking' ? 'idle' : st)),
+    );
+  }, [cancelListening, messages]);
+
   // Boot: storage → engine → greeting.
   useEffect(() => {
     let cancelled = false;
@@ -284,6 +303,8 @@ export function TiraProvider({ children }) {
       interrupt,
       updateSettings,
       refreshData,
+      briefing,
+      repeatLast,
       clearConversation: () => {
         tiraRef.current?.reset();
         setMessages([]);
@@ -303,6 +324,8 @@ export function TiraProvider({ children }) {
       interrupt,
       updateSettings,
       refreshData,
+      briefing,
+      repeatLast,
     ],
   );
 

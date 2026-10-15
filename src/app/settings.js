@@ -1,11 +1,14 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import Constants from 'expo-constants';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { brand, clearAllData, store } from '../engine';
+import { confirm } from '../tira/confirm';
 import { cancelAllReminders } from '../tira/device';
 import { useTira } from '../tira/TiraProvider';
-import { colors, space, type } from '../tira/theme';
+import { colors, gradients, radius, space, type } from '../tira/theme';
 import { speak } from '../tira/voice';
 
 const USER_ID = 'device-user';
@@ -59,22 +62,18 @@ export default function SettingsScreen() {
     refreshData();
   };
 
-  const confirmErase = () => {
-    const message =
-      'This deletes all appointments, lists, reminders, your name, and ride contacts from this phone. This cannot be undone.';
-    if (Platform.OS === 'web') {
-      // eslint-disable-next-line no-alert
-      if (window.confirm(message)) eraseAll();
-      return;
-    }
-    Alert.alert('Erase all Tira data?', message, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Erase', style: 'destructive', onPress: eraseAll },
-    ]);
+  const confirmErase = async () => {
+    const ok = await confirm(
+      'Erase all Tira data?',
+      'This deletes all appointments, lists, reminders, your name, and ride contacts from this phone. This cannot be undone.',
+      'Erase',
+    );
+    if (ok) eraseAll();
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <LinearGradient colors={gradients.screen} style={{ flex: 1 }}>
+    <ScrollView contentContainerStyle={styles.content}>
       <Text style={styles.heading} accessibilityRole="header">
         Voice
       </Text>
@@ -125,6 +124,15 @@ export default function SettingsScreen() {
             );
           })}
         </View>
+        <Button
+          label="🔊  Test voice"
+          onPress={() =>
+            speak(`Hi${profile?.userName ? ` ${profile.userName}` : ''}, I'm ${brand.displayName}. Say ${brand.displayName}, what's my day, to hear your daily briefing.`, {
+              rate: settings.speechRate,
+            })
+          }
+          hint="Plays a sample of Tira's voice"
+        />
       </View>
 
       <Text style={styles.heading} accessibilityRole="header">
@@ -154,17 +162,27 @@ export default function SettingsScreen() {
         <Button label="Clear conversation" onPress={clearConversation} hint="Clears the chat on the Talk screen" />
         <Button label="Erase all data" onPress={confirmErase} danger hint="Asks for confirmation first" />
       </View>
+
+      <Text style={styles.heading} accessibilityRole="header">
+        About
+      </Text>
+      <View style={styles.card}>
+        <Row label={brand.displayName} detail={`Version ${Constants.expoConfig?.version || '1.0.0'} · ${brand.summary}`} />
+        <Text style={styles.rowDetail}>
+          Try saying: "{brand.displayName}, what's my day", "what's next", "repeat that", or "help".
+        </Text>
+      </View>
     </ScrollView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space(2), gap: space(1.5), paddingBottom: space(6) },
-  heading: { color: colors.text, fontSize: type.heading, fontWeight: '700', marginTop: space(1) },
+  heading: { color: colors.text, fontSize: type.heading + 2, fontWeight: '800', marginTop: space(1) },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.border,
     padding: space(2),

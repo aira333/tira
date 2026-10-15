@@ -9,6 +9,7 @@ const ask = require('./ask');
 const brand = require('./brand');
 const store = require('./store');
 const { configurePlatform } = require('./platform');
+const { handleExtras, buildBriefing } = require('./extras');
 const { DialogueTurnHandler } = require('./dialogue');
 const {
   LaunchRequestHandler,
@@ -160,14 +161,25 @@ function createTira(opts = {}) {
   /** Open Tira (like "Alexa, open …"). */
   async function launch() {
     sessionRef.attributes = {};
-    return run(LaunchRequestHandler, { type: 'LaunchRequest' });
+    return remember(await run(LaunchRequestHandler, { type: 'LaunchRequest' }));
   }
 
   /**
    * One user turn. Accepts text with or without the wake word.
    * @param {string} utterance
    */
+  let lastReply = null;
+
+  function remember(reply) {
+    if (reply?.speech) lastReply = reply;
+    return reply;
+  }
+
   async function turn(utterance) {
+    return remember(await turnInner(utterance));
+  }
+
+  async function turnInner(utterance) {
     const { text } = stripWakeWord(utterance);
     if (!text) {
       return {
@@ -177,6 +189,13 @@ function createTira(opts = {}) {
         needsNotificationPermission: false,
       };
     }
+
+    const extra = await handleExtras(text, {
+      userId,
+      midDialogue: isMidDialogue(),
+      lastReply,
+    });
+    if (extra) return extra;
 
     const intentName = intentForText(text);
     const request = {
@@ -209,7 +228,14 @@ function createTira(opts = {}) {
     return Boolean(sessionRef.attributes?.dialogue?.step);
   }
 
-  return { launch, turn, reset, isMidDialogue, userId };
+  return {
+    launch,
+    turn,
+    reset,
+    isMidDialogue,
+    userId,
+    briefing: () => buildBriefing(userId),
+  };
 }
 
 module.exports = {

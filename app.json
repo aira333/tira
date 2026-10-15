@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#0B1220",
+    "backgroundColor": "#0A0F1E",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tira.assistant",
@@ -20,7 +20,7 @@
     "android": {
       "package": "com.tira.assistant",
       "adaptiveIcon": {
-        "backgroundColor": "#0B1220",
+        "backgroundColor": "#0A0F1E",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -54,6 +54,15 @@
         {
           "color": "#FBBF24",
           "defaultChannel": "appointment-reminders"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0A0F1E"
         }
       ]
     ],

@@ -159,6 +159,38 @@ function has(r, re) {
     assert.strictEqual(tira.isMidDialogue(), false);
   });
 
+  await scenario('daily briefing summarizes today', async ({ say }) => {
+    await say('my name is Sam');
+    let r = await say('add milk to my Target list');
+    for (let i = 0; i < 2 && /\?/.test(r.speech) && !/added/i.test(r.speech); i += 1) r = await say('yes');
+    await say('no');
+    r = await say("Tira, what's my day");
+    has(r, /^Good (morning|afternoon|evening), Sam\. Today is/);
+    has(r, /no appointments today/i);
+    has(r, /1 item to buy/);
+  });
+
+  await scenario("what's next names the next appointment", async ({ say }) => {
+    let r = await say('add an appointment with doctor Kim tomorrow at 3 pm');
+    r = await say('skip the rest');
+    r = await say("what's next");
+    has(r, /Doctor Kim/);
+  });
+
+  await scenario('time, date, and thanks', async ({ say }) => {
+    has(await say('what time is it'), /^It's \d{1,2}(:\d{2})? (AM|PM)\.$/);
+    has(await say("what's the date"), /^Today is \w+day, \w+ \d{1,2}, \d{4}\.$/);
+    has(await say('thank you'), /welcome/i);
+  });
+
+  await scenario('repeat works mid-question and keeps the question open', async ({ say, tira }) => {
+    const first = await say('add an appointment');
+    const again = await say('repeat that');
+    assert.strictEqual(again.speech, first.speech);
+    assert.strictEqual(tira.isMidDialogue(), true);
+    has(await say('doctor Patel'), /date/i);
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   process.exit(failed ? 1 : 0);
 })();
