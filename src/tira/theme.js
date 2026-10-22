@@ -1,37 +1,54 @@
 // src/tira/theme.js
-// High-contrast palette and large type (Tira is built for low-vision users).
+// Neutral stone palette with phthalo green as the single highlight.
+// Type: Bricolage Grotesque for the wordmark and headings, Atkinson Hyperlegible
+// (designed by the Braille Institute for low-vision readers) for everything else.
 
 export const colors = {
-  bg: '#0A0F1E',
-  bgTop: '#141E3C',
-  surface: '#131B31',
-  surfaceRaised: '#1C2744',
-  border: '#2C3A5E',
-  text: '#F8FAFC',
-  textMuted: '#AEBAD3',
-  accent: '#FBBF24',
-  accentDeep: '#F59E0B',
-  accentText: '#111827',
-  listening: '#34D399',
-  listeningDeep: '#059669',
-  thinking: '#818CF8',
-  danger: '#F87171',
-  userBubble: '#FBBF24',
-  userBubbleText: '#111827',
-  tiraBubble: '#1C2744',
+  // Neutrals (warm stone, slightly green-biased so the accent sits naturally)
+  bg: '#F4F3EF',
+  bgTop: '#F4F3EF',
+  surface: '#FFFFFF',
+  surfaceRaised: '#ECEBE6',
+  border: '#DEDCD4',
+  text: '#151917',
+  textMuted: '#5A605C',
+  // Phthalo green
+  accent: '#123524',
+  accentDeep: '#0B2418',
+  accentMid: '#1E5A3E',
+  accentSoft: '#E2ECE6',
+  accentText: '#FFFFFF',
+  // States
+  listening: '#2E8B62',
+  listeningDeep: '#1F6B4A',
+  thinking: '#7A807C',
+  danger: '#B42318',
+  // Chat
+  userBubble: '#123524',
+  userBubbleText: '#FFFFFF',
+  tiraBubble: '#FFFFFF',
 };
 
 export const gradients = {
-  screen: [colors.bgTop, colors.bg],
-  accent: [colors.accent, colors.accentDeep],
-  listening: [colors.listening, colors.listeningDeep],
-  thinking: ['#A5B4FC', '#6366F1'],
-  card: ['#1E2A4A', '#151E36'],
+  screen: [colors.bg, colors.bg],
+  accent: ['#1E5A3E', '#123524'],
+  listening: ['#3BA176', '#1F6B4A'],
+  thinking: ['#9AA09C', '#6B716D'],
+  card: ['#FFFFFF', '#FFFFFF'],
+  hero: ['#1A4A33', '#123524', '#0B2418'],
+};
+
+export const fonts = {
+  brand: 'BricolageGrotesque_800ExtraBold',
+  display: 'BricolageGrotesque_700Bold',
+  displaySemi: 'BricolageGrotesque_600SemiBold',
+  body: 'AtkinsonHyperlegible_400Regular',
+  bodyBold: 'AtkinsonHyperlegible_700Bold',
 };
 
 export const type = {
   hero: 34,
-  title: 30,
+  title: 28,
   heading: 22,
   body: 20,
   small: 17,
@@ -39,8 +56,19 @@ export const type = {
 };
 
 export const radius = {
-  card: 20,
+  card: 22,
+  control: 16,
   pill: 999,
+};
+
+export const shadow = {
+  card: {
+    shadowColor: '#1B231F',
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
 };
 
 export const space = (n) => n * 8;

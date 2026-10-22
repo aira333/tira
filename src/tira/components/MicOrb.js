@@ -1,6 +1,7 @@
 // src/tira/components/MicOrb.js
 // The big talk button: glowing orb with pulse rings while listening.
 
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -75,7 +76,7 @@ export default function MicOrb({ status, disabled, onPress, accessibilityLabel }
 
   const gradient =
     status === 'listening' ? gradients.listening : status === 'thinking' ? gradients.thinking : gradients.accent;
-  const ringColor = listening ? colors.listening : colors.accent;
+  const ringColor = listening ? colors.listening : colors.accentMid;
 
   return (
     <View style={styles.wrap}>
@@ -99,9 +100,9 @@ export default function MicOrb({ status, disabled, onPress, accessibilityLabel }
             {status === 'thinking' ? (
               <ActivityIndicator color={colors.accentText} size="large" />
             ) : listening || speaking ? (
-              <View style={styles.stop} />
+              <Ionicons name="stop" size={34} color={colors.accentText} />
             ) : (
-              <MicGlyph />
+              <Ionicons name="mic" size={46} color={colors.accentText} />
             )}
           </LinearGradient>
         </Pressable>
@@ -109,20 +110,6 @@ export default function MicOrb({ status, disabled, onPress, accessibilityLabel }
     </View>
   );
 }
-
-/** A drawn microphone (no icon font needed). */
-function MicGlyph() {
-  return (
-    <View style={styles.mic} accessible={false}>
-      <View style={styles.micHead} />
-      <View style={styles.micCup} />
-      <View style={styles.micStem} />
-      <View style={styles.micBase} />
-    </View>
-  );
-}
-
-const INK = colors.accentText;
 
 const styles = StyleSheet.create({
   wrap: { width: SIZE * 1.9, height: SIZE * 1.5, alignItems: 'center', justifyContent: 'center' },
@@ -140,24 +127,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.accent,
-    shadowOpacity: 0.45,
+    shadowOpacity: 0.35,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 6 },
     elevation: 10,
   },
-  stop: { width: 30, height: 30, borderRadius: 6, backgroundColor: INK },
-  mic: { alignItems: 'center' },
-  micHead: { width: 22, height: 34, borderRadius: 11, backgroundColor: INK },
-  micCup: {
-    width: 34,
-    height: 20,
-    marginTop: -12,
-    borderBottomLeftRadius: 17,
-    borderBottomRightRadius: 17,
-    borderWidth: 3.5,
-    borderTopWidth: 0,
-    borderColor: INK,
-  },
-  micStem: { width: 3.5, height: 8, backgroundColor: INK },
-  micBase: { width: 20, height: 3.5, borderRadius: 2, backgroundColor: INK },
 });

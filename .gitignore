@@ -39,3 +39,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Supabase keys (see .env.example). Shipped to EAS builds via .easignore.
+.env

@@ -15,20 +15,20 @@ Start any request with **"Tira"**:
 > "Tira, what's on my Costco shopping list?"
 > "Tira, request a ride to my appointment"
 
-Tira runs entirely on the phone: you don't need Alexa, AWS, or a server, and your data never leaves the device.
+Tira runs on the phone and doesn't need Alexa or AWS. Customers can sign in with Google so Tira remembers them, greets them by name and keeps their appointments and lists on any phone. Or they can skip sign-in and keep everything on the device.
 
 ## Screenshots
 
 <table>
   <tr>
-    <td align="center" width="33%"><img src="docs/screenshots/talk-home.png" width="240" alt="Talk screen: greeting, Up next card with today's appointment and counts, mic button" /><br/><b>Talk</b><br/><sub>Greeting, Up next card, big mic button</sub></td>
+    <td align="center" width="33%"><img src="docs/screenshots/sign-in.png" width="240" alt="Sign-in screen: phthalo green welcome panel with the tira wordmark, Continue with Google, and Continue without an account" /><br/><b>Sign in</b><br/><sub>Google, or continue without an account</sub></td>
+    <td align="center" width="33%"><img src="docs/screenshots/talk-home.png" width="240" alt="Talk screen: tira wordmark, personal greeting, Up next card and green mic button" /><br/><b>Talk</b><br/><sub>Personal greeting, Up next card, mic</sub></td>
     <td align="center" width="33%"><img src="docs/screenshots/talk-briefing.png" width="240" alt="Talk screen showing the spoken daily briefing" /><br/><b>Daily briefing</b><br/><sub>"Tira, what's my day?"</sub></td>
-    <td align="center" width="33%"><img src="docs/screenshots/my-day-appointments.png" width="240" alt="My Day screen with today's and upcoming appointments" /><br/><b>My Day: appointments</b><br/><sub>Today and coming up, with reminders</sub></td>
   </tr>
   <tr>
+    <td align="center"><img src="docs/screenshots/my-day-appointments.png" width="240" alt="My Day screen with today's and upcoming appointments" /><br/><b>My Day: appointments</b><br/><sub>Today and coming up, with reminders</sub></td>
     <td align="center"><img src="docs/screenshots/my-day-lists.png" width="240" alt="My Day screen with shopping and to-do lists and progress bars" /><br/><b>My Day: lists</b><br/><sub>Tap to check off, long-press to remove</sub></td>
-    <td align="center"><img src="docs/screenshots/settings.png" width="240" alt="Settings screen with hands-free, spoken replies, speaking speed and test voice" /><br/><b>Settings</b><br/><sub>Hands-free, voice speed, test voice</sub></td>
-    <td align="center"><img src="assets/icon.png" width="240" alt="Tira app icon: amber orb with a T and sound waves on navy" /><br/><b>App icon</b><br/><sub>Also used for the splash screen</sub></td>
+    <td align="center"><img src="docs/screenshots/settings.png" width="240" alt="Settings screen with account, hands-free, spoken replies and speaking speed" /><br/><b>Settings</b><br/><sub>Account, hands-free, voice speed</sub></td>
   </tr>
 </table>
 
@@ -43,8 +43,10 @@ Tira runs entirely on the phone: you don't need Alexa, AWS, or a server, and you
 - 🚗 **Rides:** saves your transport service, confirms the details, then opens the dialer and tells you what to say.
 - 🔁 **Repeat:** "Repeat that", or the Repeat button, replays the last answer, even mid-question.
 - 🎙️ **Hands-free wake word:** with the app open, say "Tira, …" without touching the screen.
-- ♿ **Accessible:** large type, high contrast, screen-reader labels on everything, and a haptic tap when Tira hears you.
-- 🔒 **Private:** everything is stored on the phone. No account, no server.
+- 👤 **Google sign-in:** Tira remembers each customer, greets them by first name and shows their Google photo.
+- ☁️ **Customer database:** appointments, lists and settings sync to Supabase (Postgres), so they're there on any phone. It works offline and syncs later.
+- ♿ **Accessible:** body text in Atkinson Hyperlegible (designed for low-vision readers), large type, strong contrast, screen-reader labels on everything, and a haptic tap when Tira hears you.
+- 🔒 **Private:** row-level security means each customer can only read their own data. Guests' data never leaves the phone. Customers can delete their account from Settings.
 
 ---
 
@@ -73,6 +75,7 @@ Tira runs entirely on the phone: you don't need Alexa, AWS, or a server, and you
 | [Git](https://git-scm.com) | any | Cloning the project |
 | A phone | Android 12+ or iOS 17+ | Trying the app |
 | [Expo account](https://expo.dev/signup) (free) | — | Cloud builds (EAS) |
+| [Supabase](https://supabase.com) + [Google Cloud](https://console.cloud.google.com) (free) | — | *Optional:* Google sign-in and the customer database ([setup guide](docs/CLOUD_SETUP.md)) |
 | [Android Studio](https://developer.android.com/studio) | latest | *Optional:* building on your own PC instead of in the cloud |
 
 Check Node is installed:
@@ -107,7 +110,7 @@ The conversation engine runs under plain Node, so you can test it without a phon
 npm test
 ```
 
-You should see `16 passed, 0 failed`. To print every turn of every conversation:
+You should see `16 passed, 0 failed` (conversations) and `6 passed, 0 failed` (cloud sync). To print every turn of every conversation:
 
 ```bash
 npm run test:verbose
@@ -249,9 +252,24 @@ In `app.json`:
 
 | Key | Current | Change to |
 |---|---|---|
-| `expo.android.package` | `com.tira.assistant` | A unique ID you own, e.g. `com.yourname.tira`. **Can't be changed after the first Play Store upload.** |
-| `expo.ios.bundleIdentifier` | `com.tira.assistant` | Same as above |
-| `expo.icon`, `expo.android.adaptiveIcon.*` | Tira icon in `assets/` (amber orb on navy) | Optional: your own 1024×1024 PNGs with the same file names |
+| `expo.android.package` | `com.ustechbridge.tira` | Keep this. **It can never change after the first Play Store upload.** |
+| `expo.ios.bundleIdentifier` | `com.ustechbridge.tira` | Same as above |
+| `expo.icon`, `expo.android.adaptiveIcon.*` | Tira icon in `assets/` (lowercase "t." on phthalo green) | Optional: your own 1024×1024 PNGs with the same file names |
+
+### Google sign-in and the customer database
+
+Follow **[docs/CLOUD_SETUP.md](docs/CLOUD_SETUP.md)**. In short:
+
+1. Create a free Supabase project and run [`supabase/schema.sql`](supabase/schema.sql).
+2. Create a Google OAuth client and enable Google in Supabase.
+3. Copy `.env.example` to `.env` and fill in your Supabase URL and anon key.
+
+Without `.env`, Tira runs in on-device mode: the sign-in button is disabled and everything stays on the phone.
+
+### Colors and fonts
+
+All colors, fonts and sizes live in `src/tira/theme.js`: neutral stone tones with **phthalo green** (`#123524`) as the only highlight.
+The **tira.** wordmark (`src/tira/components/Wordmark.js`) and headings use **Bricolage Grotesque**; body text uses **Atkinson Hyperlegible**.
 
 ### Microphone and speech permission text
 
@@ -285,6 +303,7 @@ Send them the link EAS prints. The build profiles live in `eas.json`:
 - [ ] Set your own `android.package` in `app.json` (see [Configure](#6-configure))
 - [x] App icon and splash screen (done; the Play Store icon is `assets/store-icon-512.png`)
 - [ ] Publish a privacy policy page (required: Tira uses the microphone and stores personal data)
+- [ ] If sign-in is on: a web page explaining how to delete an account (Google requires a link as well as the in-app button)
 - [ ] Prepare store graphics: 512×512 icon, 1024×500 feature graphic, at least 2 phone screenshots
 
 ### Steps
@@ -296,11 +315,12 @@ Send them the link EAS prints. The build profiles live in `eas.json`:
    npx eas-cli@latest build --platform android --profile production
    ```
 3. **Create the app** in Play Console and complete these sections:
-   - **Data safety:** audio is processed for speech recognition by the phone's speech
-     service; name, phone numbers, and appointments are stored on the device only; nothing is
-     sent to your servers or shared.
+   - **Data safety:** audio is processed for speech recognition by the phone's speech service.
+     *Without sign-in:* name, phone numbers and appointments are stored on the device only.
+     *With sign-in:* you collect name, email, user ID and app activity (appointments, lists),
+     stored on your servers (Supabase), encrypted in transit, not shared, and deletable by the user.
    - **Content rating** questionnaire, **target audience** (adults), **ads** (none),
-     **privacy policy URL**, **app access** (no login needed).
+     **privacy policy URL**, **app access** (everything works with "Continue without an account").
 4. **First upload by hand:** Testing → Internal testing → Create release → upload the `.aab`
    from step 2. Google requires the very first upload to go through the website.
 5. **Later uploads from the terminal** (needs a Google service-account key; EAS walks you through it):
@@ -356,7 +376,7 @@ Tira speaks ◄── expo-speech ◄── "I've added milk to your Target list
 |---|---|
 | "Alexa, open day buddy" | "Tira, …" or tap the mic |
 | Alexa's NLU picks intents and slots | The full transcript goes to the engine's local classifier |
-| DynamoDB | AsyncStorage (`src/engine/store`, same function names) |
+| DynamoDB | AsyncStorage on the phone (`src/engine/store`, same function names), synced to Supabase when signed in |
 | Alexa Reminders API | Local notifications |
 | Twilio calls you, then bridges to transport | Opens the dialer to your transport service |
 | Dates computed in UTC on Lambda | Dates computed in the phone's local time |
@@ -369,22 +389,35 @@ Tira speaks ◄── expo-speech ◄── "I've added milk to your Target list
 tira/
 ├── app.json                 # App name, package ID, permissions, plugins
 ├── eas.json                 # Cloud build + Play Store submit profiles
+├── .env.example             # Supabase URL + anon key template (copy to .env)
+├── .easignore               # Like .gitignore, but uploads .env to EAS builds
 ├── assets/                  # App icon, adaptive icons, splash, store icon
-├── docs/screenshots/        # Screenshots used in this README
+├── docs/
+│   ├── CLOUD_SETUP.md       # Google sign-in + database setup, step by step
+│   └── screenshots/         # Screenshots used in this README
+├── supabase/schema.sql      # Tables, row-level security, delete_my_account()
 ├── src/
 │   ├── app/                 # Screens (Expo Router)
-│   │   ├── _layout.js       # Bottom tabs
-│   │   ├── index.js         # Talk
-│   │   ├── today.js         # My Day
-│   │   └── settings.js      # Settings
+│   │   ├── _layout.js       # Fonts, providers, sign-in gate
+│   │   ├── sign-in.js       # Continue with Google / without an account
+│   │   └── (tabs)/
+│   │       ├── _layout.js   # Bottom tabs
+│   │       ├── index.js     # Talk
+│   │       ├── today.js     # My Day
+│   │       └── settings.js  # Account, voice, data
 │   ├── tira/                # App glue
+│   │   ├── AuthProvider.js  # Google session, guest mode, which storage to use
+│   │   ├── supabase.js      # Supabase client, Google OAuth, profile, delete account
+│   │   ├── cloud.js         # Phone ⇄ cloud sync adapters, guest → account migration
+│   │   ├── config.js        # Reads EXPO_PUBLIC_SUPABASE_* from .env
 │   │   ├── TiraProvider.js  # Conversation state + voice loop (wake word, follow-ups)
 │   │   ├── voice.js         # Speech in / speech out
-│   │   ├── device.js        # Storage, notifications, dialer
+│   │   ├── device.js        # Notifications, dialer
 │   │   ├── confirm.js       # Yes/no dialogs (phone + web)
-│   │   ├── theme.js         # High-contrast colors, gradients, large type
+│   │   ├── theme.js         # Neutral + phthalo green palette, fonts, sizes
 │   │   └── components/
-│   │       └── MicOrb.js    # Animated talk button
+│   │       ├── MicOrb.js    # Animated talk button
+│   │       └── Wordmark.js  # "tira." logo text
 │   └── engine/              # Ported Day Buddy engine (plain JS, runs in Node too)
 │       ├── index.js         # createTira(): text in → speech out
 │       ├── extras.js        # Daily briefing, what's next, time/date, repeat, thanks
@@ -396,6 +429,7 @@ tira/
 │       └── modules/         # Appointments, shopping, to-do, rides, profile
 └── test/
     ├── conversation.test.js # 16 scripted conversations (npm test)
+    ├── cloud.test.js        # 6 cloud sync tests with a fake Supabase (npm test)
     └── chat.js              # Terminal chat with spoken replies (npm run chat)
 ```
 
@@ -417,6 +451,23 @@ tira/
 ---
 
 ## 12. Changelog
+
+### v1.2: accounts and new look
+
+**Google sign-in and customer database**
+- **Continue with Google** on first launch, or **Continue without an account**.
+- Customers are stored in Supabase: `profiles` (name, email, photo, last seen) and `user_data` (appointments, lists, settings). Row-level security keeps each customer's rows private.
+- Tira greets customers by their Google first name, and their photo appears on the Talk screen.
+- Saves are instant on the phone and sync in the background. It works offline, a new phone restores everything on sign-in, and guest data moves into the account on first sign-in.
+- Settings → **Account**: who's signed in, sync status, **Sign out** and **Delete account** (required by Google Play).
+
+**Redesign**
+- Neutral stone palette with **phthalo green** as the single highlight.
+- New **tira.** wordmark in Bricolage Grotesque; body text in Atkinson Hyperlegible.
+- Ionicons throughout (tabs, chips, buttons), white cards with soft shadows, and green chat bubbles for your messages.
+- New app icon and splash: a lowercase "t." on phthalo green.
+
+**Tests:** 22 total (16 conversations + 6 cloud sync).
 
 ### v1.1: features and redesign
 

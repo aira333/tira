@@ -6,8 +6,9 @@ import * as Haptics from 'expo-haptics';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 
-import { configurePlatform, createTira, initStore, stripWakeWord } from '../engine';
-import { devicePlatform, flushPendingCalls, storageAdapter } from './device';
+import { configurePlatform, createTira, initStore, store, stripWakeWord } from '../engine';
+import { useAuth } from './AuthProvider';
+import { devicePlatform, flushPendingCalls } from './device';
 import { recognizer, speak, stopSpeaking } from './voice';
 
 const SETTINGS_KEY = 'tira.settings';
@@ -32,6 +33,7 @@ function wait(ms) {
 }
 
 export function TiraProvider({ children }) {
+  const { adapter, profile } = useAuth();
   const [ready, setReady] = useState(false);
   const [messages, setMessages] = useState([]);
   /** idle | listening | thinking | speaking */
@@ -243,12 +245,10 @@ export function TiraProvider({ children }) {
     );
   }, [cancelListening, messages]);
 
-  // Boot: storage → engine → greeting.
+  // Settings are per phone, loaded once.
   useEffect(() => {
-    let cancelled = false;
+    configurePlatform(devicePlatform);
     (async () => {
-      configurePlatform(devicePlatform);
-      await initStore(storageAdapter);
       try {
         const saved = JSON.parse((await AsyncStorage.getItem(SETTINGS_KEY)) || 'null');
         if (saved) {
@@ -259,19 +259,45 @@ export function TiraProvider({ children }) {
       } catch {
         /* keep defaults */
       }
+    })();
+  }, []);
+
+  // Boot (and re-boot on sign-in / sign-out): storage → engine → greeting.
+  const givenName = profile?.givenName || '';
+  useEffect(() => {
+    if (!adapter) {
+      setReady(false);
+      return undefined;
+    }
+    let cancelled = false;
+    cancelListening();
+    stopSpeaking();
+    setReady(false);
+    setMessages([]);
+    (async () => {
+      await initStore(adapter);
+      // Personalize from Google the first time: Tira calls you by your first name.
+      if (givenName) {
+        const existing = await store.getUserProfile('device-user').catch(() => null);
+        if (!existing?.userName) {
+          await store.upsertUserProfile('device-user', { userName: givenName }).catch(() => {});
+        }
+      }
+      if (cancelled) return;
       tiraRef.current = createTira({ userId: 'device-user' });
       const welcome = await tiraRef.current.launch();
       if (cancelled) return;
       setReady(true);
+      setDataVersion((v) => v + 1);
       addMessage('tira', welcome.speech);
       await say(welcome.speech);
-      if (settingsRef.current.handsFree) runWakeLoop();
+      if (!cancelled && settingsRef.current.handsFree) runWakeLoop();
     })();
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [adapter]);
 
   // Pause the mic when the app leaves the foreground.
   useEffect(() => {

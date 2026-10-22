@@ -1,10 +1,11 @@
-import { LinearGradient } from 'expo-linear-gradient';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,10 +17,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import brand from '../engine/brand';
-import MicOrb from '../tira/components/MicOrb';
-import { useTira } from '../tira/TiraProvider';
-import { colors, gradients, radius, space, type } from '../tira/theme';
+import brand from '../../engine/brand';
+import { useAuth } from '../../tira/AuthProvider';
+import MicOrb from '../../tira/components/MicOrb';
+import Wordmark from '../../tira/components/Wordmark';
+import { useTira } from '../../tira/TiraProvider';
+import { colors, fonts, radius, shadow, space, type } from '../../tira/theme';
 
 const STATUS_LABEL = {
   idle: 'Tap to talk',
@@ -29,13 +32,13 @@ const STATUS_LABEL = {
 };
 
 const QUICK_ACTIONS = [
-  { label: "What's my day?", text: "What's my day?" },
-  { label: "What's next?", text: "What's next?" },
-  { label: 'Add appointment', text: 'Add an appointment' },
-  { label: 'Shopping list', text: "What's on my shopping list?" },
-  { label: 'To-dos', text: "What's on my to do list?" },
-  { label: 'Request a ride', text: 'Request a ride to my appointment' },
-  { label: 'Help', text: 'Help' },
+  { label: "What's my day?", text: "What's my day?", icon: 'sunny-outline' },
+  { label: "What's next?", text: "What's next?", icon: 'arrow-forward-circle-outline' },
+  { label: 'Add appointment', text: 'Add an appointment', icon: 'add-circle-outline' },
+  { label: 'Shopping list', text: "What's on my shopping list?", icon: 'cart-outline' },
+  { label: 'To-dos', text: "What's on my to do list?", icon: 'checkbox-outline' },
+  { label: 'Request a ride', text: 'Request a ride to my appointment', icon: 'car-outline' },
+  { label: 'Help', text: 'Help', icon: 'help-circle-outline' },
 ];
 
 function partOfDay(d = new Date()) {
@@ -65,25 +68,54 @@ function whenLabel(iso) {
   return `${d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · ${time}`;
 }
 
+function Avatar({ size = 44 }) {
+  const { profile, syncState, status } = useAuth();
+  const { briefing } = useTira();
+  const router = useRouter();
+  const initial = (briefing?.userName || profile?.givenName || brand.displayName)[0]?.toUpperCase();
+  const dot =
+    status !== 'signedIn' ? null : syncState === 'offline' ? colors.thinking : syncState === 'syncing' ? '#D9A441' : colors.listening;
+  return (
+    <Pressable
+      onPress={() => router.navigate('/settings')}
+      accessibilityRole="button"
+      accessibilityLabel={
+        status === 'signedIn' ? `Account: ${profile?.fullName || profile?.email}. Opens settings.` : 'Settings'
+      }
+      hitSlop={8}
+    >
+      {profile?.avatarUrl ? (
+        <Image source={{ uri: profile.avatarUrl }} style={{ width: size, height: size, borderRadius: size / 2 }} />
+      ) : (
+        <View style={[styles.avatarFallback, { width: size, height: size, borderRadius: size / 2 }]}>
+          <Text style={styles.avatarText}>{initial}</Text>
+        </View>
+      )}
+      {dot ? <View style={[styles.syncDot, { backgroundColor: dot }]} /> : null}
+    </Pressable>
+  );
+}
+
 function Header() {
   const { briefing } = useTira();
+  const { profile } = useAuth();
   const insets = useSafeAreaInsets();
-  const name = briefing?.userName;
+  const name = briefing?.userName || profile?.givenName;
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   return (
-    <View style={[styles.header, { paddingTop: insets.top + space(1.5) }]}>
-      <View style={{ flex: 1 }}>
+    <View style={{ paddingTop: insets.top + space(1), gap: space(2.5) }}>
+      <View style={styles.topBar}>
+        <Wordmark size={30} />
+        <Avatar />
+      </View>
+      <View>
         <Text style={styles.date}>{today}</Text>
         <Text style={styles.greeting} accessibilityRole="header">
           {partOfDay()}
-          {name ? `, ${name}` : ''}
+          {name ? ',' : ''}
         </Text>
+        {name ? <Text style={styles.name}>{name}</Text> : null}
       </View>
-      <LinearGradient colors={gradients.accent} style={styles.avatar}>
-        <Text style={styles.avatarText} accessible={false}>
-          {brand.displayName[0]}
-        </Text>
-      </LinearGradient>
     </View>
   );
 }
@@ -97,6 +129,7 @@ function DayCard() {
 
   const label = [
     next ? `Next appointment: ${doctorLabel(next.doctorName)}, ${whenLabel(next.dateTime)}` : 'No upcoming appointments',
+    `${briefing.todayAppointments?.length || 0} today`,
     `${todos || 0} to-dos`,
     `${shopping || 0} items to buy`,
   ].join('. ');
@@ -107,24 +140,26 @@ function DayCard() {
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint="Opens My Day"
-      style={({ pressed }) => [pressed && { opacity: 0.85 }]}
+      style={({ pressed }) => [styles.dayCard, pressed && { opacity: 0.9 }]}
     >
-      <LinearGradient colors={gradients.card} style={styles.dayCard}>
-        <Text style={styles.cardKicker}>UP NEXT</Text>
-        {next ? (
-          <>
-            <Text style={styles.cardTitle}>{doctorLabel(next.doctorName)}</Text>
-            <Text style={styles.cardWhen}>{whenLabel(next.dateTime)}</Text>
-          </>
-        ) : (
-          <Text style={styles.cardTitle}>Nothing scheduled</Text>
-        )}
-        <View style={styles.statsRow}>
-          <Stat value={briefing.todayAppointments?.length || 0} label="today" />
-          <Stat value={todos || 0} label="to-dos" />
-          <Stat value={shopping || 0} label="to buy" />
+      <View style={styles.cardTop}>
+        <View style={styles.cardIcon}>
+          <Ionicons name="calendar" size={22} color={colors.accent} />
         </View>
-      </LinearGradient>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardKicker}>UP NEXT</Text>
+          <Text style={styles.cardTitle} numberOfLines={1}>
+            {next ? doctorLabel(next.doctorName) : 'Nothing scheduled'}
+          </Text>
+          {next ? <Text style={styles.cardWhen}>{whenLabel(next.dateTime)}</Text> : null}
+        </View>
+        <Ionicons name="chevron-forward" size={22} color={colors.textMuted} />
+      </View>
+      <View style={styles.statsRow}>
+        <Stat value={briefing.todayAppointments?.length || 0} label="today" />
+        <Stat value={todos || 0} label="to-dos" />
+        <Stat value={shopping || 0} label="to buy" />
+      </View>
     </Pressable>
   );
 }
@@ -146,11 +181,6 @@ function Bubble({ item }) {
       accessible
       accessibilityLabel={`${mine ? 'You said' : `${brand.displayName} said`}: ${item.text}`}
     >
-      {!mine ? (
-        <LinearGradient colors={gradients.accent} style={styles.bubbleAvatar}>
-          <Text style={styles.bubbleAvatarText}>{brand.displayName[0]}</Text>
-        </LinearGradient>
-      ) : null}
       <View style={[styles.bubble, mine ? styles.userBubble : styles.tiraBubble]}>
         <Text style={[styles.bubbleText, mine && styles.userBubbleText]}>{item.text}</Text>
       </View>
@@ -158,7 +188,7 @@ function Bubble({ item }) {
   );
 }
 
-function RoundButton({ label, glyph, onPress, disabled }) {
+function RoundButton({ label, iconName, onPress, disabled }) {
   return (
     <Pressable
       onPress={onPress}
@@ -167,7 +197,9 @@ function RoundButton({ label, glyph, onPress, disabled }) {
       accessibilityLabel={label}
       style={({ pressed }) => [styles.round, { opacity: disabled ? 0.35 : pressed ? 0.7 : 1 }]}
     >
-      <Text style={styles.roundGlyph}>{glyph}</Text>
+      <View style={styles.roundIcon}>
+        <Ionicons name={iconName} size={24} color={colors.text} />
+      </View>
       <Text style={styles.roundLabel}>{label}</Text>
     </Pressable>
   );
@@ -222,7 +254,7 @@ export default function TalkScreen() {
       : STATUS_LABEL[status];
 
   return (
-    <LinearGradient colors={gradients.screen} style={styles.container}>
+    <View style={styles.container}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <FlatList
           ref={listRef}
@@ -234,7 +266,7 @@ export default function TalkScreen() {
           windowSize={50}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           ListHeaderComponent={
-            <View style={{ gap: space(2), marginBottom: space(1) }}>
+            <View style={{ gap: space(2.5), marginBottom: space(1) }}>
               <Header />
               <DayCard />
             </View>
@@ -245,7 +277,7 @@ export default function TalkScreen() {
           ListFooterComponent={
             partial ? (
               <View style={[styles.bubbleRow, { justifyContent: 'flex-end' }]}>
-                <View style={[styles.bubble, styles.userBubble, { opacity: 0.6 }]}>
+                <View style={[styles.bubble, styles.userBubble, { opacity: 0.55 }]}>
                   <Text style={[styles.bubbleText, styles.userBubbleText]}>{partial}</Text>
                 </View>
               </View>
@@ -265,10 +297,11 @@ export default function TalkScreen() {
                 key={a.label}
                 onPress={() => send(a.text)}
                 disabled={!ready}
-                style={({ pressed }) => [styles.chip, pressed && { opacity: 0.7 }]}
+                style={({ pressed }) => [styles.chip, pressed && { backgroundColor: colors.accentSoft }]}
                 accessibilityRole="button"
                 accessibilityLabel={a.text}
               >
+                <Ionicons name={a.icon} size={18} color={colors.accent} />
                 <Text style={styles.chipText}>{a.label}</Text>
               </Pressable>
             ))}
@@ -281,7 +314,7 @@ export default function TalkScreen() {
           ) : null}
 
           <View style={styles.controls}>
-            <RoundButton label="Repeat" glyph="↻" onPress={repeatLast} disabled={!ready || messages.length === 0} />
+            <RoundButton label="Repeat" iconName="refresh" onPress={repeatLast} disabled={!ready || messages.length === 0} />
             <MicOrb
               status={status}
               onPress={onMicPress}
@@ -296,7 +329,7 @@ export default function TalkScreen() {
             />
             <RoundButton
               label={showInput && voiceAvailable ? 'Hide' : 'Type'}
-              glyph="⌨"
+              iconName="keypad-outline"
               onPress={() => setTyping((t) => !t)}
               disabled={!voiceAvailable}
             />
@@ -323,55 +356,73 @@ export default function TalkScreen() {
                 onPress={submit}
                 accessibilityRole="button"
                 accessibilityLabel="Send"
-                style={({ pressed }) => [pressed && { opacity: 0.8 }]}
+                style={({ pressed }) => [styles.send, pressed && { opacity: 0.85 }]}
               >
-                <LinearGradient colors={gradients.accent} style={styles.send}>
-                  <Text style={styles.sendText}>Send</Text>
-                </LinearGradient>
+                <Ionicons name="arrow-up" size={24} color={colors.accentText} />
               </Pressable>
             </View>
           ) : null}
         </View>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  list: { paddingHorizontal: space(2), paddingBottom: space(2), gap: space(1.5), flexGrow: 1 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  list: { paddingHorizontal: space(2.5), paddingBottom: space(2), gap: space(1.5), flexGrow: 1 },
 
-  header: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
-  date: { color: colors.textMuted, fontSize: type.small, fontWeight: '600' },
-  greeting: { color: colors.text, fontSize: type.hero, fontWeight: '800', letterSpacing: -0.5, marginTop: 2 },
-  avatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { color: colors.accentText, fontSize: 26, fontWeight: '900' },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  avatarFallback: { backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { color: colors.accentText, fontFamily: fonts.display, fontSize: 20 },
+  syncDot: {
+    position: 'absolute',
+    right: -1,
+    bottom: -1,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2.5,
+    borderColor: colors.bg,
+  },
+  date: { color: colors.textMuted, fontFamily: fonts.bodyBold, fontSize: type.tiny, letterSpacing: 0.3 },
+  greeting: { color: colors.textMuted, fontFamily: fonts.displaySemi, fontSize: type.heading + 2, marginTop: 6 },
+  name: { color: colors.text, fontFamily: fonts.display, fontSize: type.hero + 6, letterSpacing: -1, lineHeight: 46 },
 
   dayCard: {
+    backgroundColor: colors.surface,
     borderRadius: radius.card,
-    padding: space(2.5),
+    padding: space(2),
+    gap: space(2),
     borderWidth: 1,
     borderColor: colors.border,
-    gap: 4,
+    ...shadow.card,
   },
-  cardKicker: { color: colors.accent, fontSize: type.tiny, fontWeight: '800', letterSpacing: 1.5 },
-  cardTitle: { color: colors.text, fontSize: type.heading + 2, fontWeight: '800' },
-  cardWhen: { color: colors.textMuted, fontSize: type.body },
-  statsRow: {
-    flexDirection: 'row',
-    marginTop: space(2),
-    paddingTop: space(1.5),
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: space(1.5) },
+  cardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: colors.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  stat: { flex: 1, alignItems: 'center' },
-  statValue: { color: colors.text, fontSize: type.heading + 4, fontWeight: '800' },
-  statLabel: { color: colors.textMuted, fontSize: type.tiny },
+  cardKicker: { color: colors.accentMid, fontFamily: fonts.bodyBold, fontSize: 13, letterSpacing: 1.4 },
+  cardTitle: { color: colors.text, fontFamily: fonts.display, fontSize: type.heading },
+  cardWhen: { color: colors.textMuted, fontFamily: fonts.body, fontSize: type.small },
+  statsRow: { flexDirection: 'row', gap: space(1) },
+  stat: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: space(1.25),
+    borderRadius: 14,
+    backgroundColor: colors.bg,
+  },
+  statValue: { color: colors.accent, fontFamily: fonts.display, fontSize: type.heading + 2 },
+  statLabel: { color: colors.textMuted, fontFamily: fonts.body, fontSize: type.tiny },
 
-  bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space(1) },
-  bubbleAvatar: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  bubbleAvatarText: { color: colors.accentText, fontWeight: '900', fontSize: 15 },
-  bubble: { maxWidth: '82%', paddingVertical: space(1.5), paddingHorizontal: space(2), borderRadius: 20 },
+  bubbleRow: { flexDirection: 'row' },
+  bubble: { maxWidth: '84%', paddingVertical: space(1.5), paddingHorizontal: space(2), borderRadius: 22 },
   tiraBubble: {
     backgroundColor: colors.tiraBubble,
     borderBottomLeftRadius: 6,
@@ -379,8 +430,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   userBubble: { backgroundColor: colors.userBubble, borderBottomRightRadius: 6 },
-  bubbleText: { color: colors.text, fontSize: type.body, lineHeight: 28 },
-  userBubbleText: { color: colors.userBubbleText, fontWeight: '600' },
+  bubbleText: { color: colors.text, fontFamily: fonts.body, fontSize: type.body, lineHeight: 28 },
+  userBubbleText: { color: colors.userBubbleText },
 
   dock: {
     borderTopLeftRadius: 28,
@@ -393,17 +444,19 @@ const styles = StyleSheet.create({
   },
   chips: { gap: space(1), paddingHorizontal: space(2) },
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     borderRadius: radius.pill,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.bg,
     borderWidth: 1,
     borderColor: colors.border,
     paddingVertical: space(1.25),
-    paddingHorizontal: space(2),
+    paddingHorizontal: space(1.75),
     minHeight: 44,
-    justifyContent: 'center',
   },
-  chipText: { color: colors.text, fontSize: type.small, fontWeight: '600' },
-  error: { color: colors.danger, fontSize: type.small, paddingHorizontal: space(2), paddingTop: space(1) },
+  chipText: { color: colors.text, fontFamily: fonts.bodyBold, fontSize: type.tiny + 1 },
+  error: { color: colors.danger, fontFamily: fonts.body, fontSize: type.small, paddingHorizontal: space(2), paddingTop: space(1) },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -412,21 +465,18 @@ const styles = StyleSheet.create({
     marginTop: space(0.5),
   },
   round: { width: 72, alignItems: 'center', gap: 4 },
-  roundGlyph: {
+  roundIcon: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.bg,
     borderWidth: 1,
     borderColor: colors.border,
-    color: colors.text,
-    fontSize: 24,
-    textAlign: 'center',
-    lineHeight: 50,
-    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  roundLabel: { color: colors.textMuted, fontSize: type.tiny, fontWeight: '600' },
-  status: { color: colors.textMuted, fontSize: type.small, textAlign: 'center', marginTop: -space(1) },
+  roundLabel: { color: colors.textMuted, fontFamily: fonts.bodyBold, fontSize: type.tiny - 1 },
+  status: { color: colors.textMuted, fontFamily: fonts.body, fontSize: type.small, textAlign: 'center', marginTop: -space(1) },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -437,14 +487,21 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     minHeight: 52,
-    borderRadius: 16,
+    borderRadius: radius.control,
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.bg,
     color: colors.text,
+    fontFamily: fonts.body,
     fontSize: type.body,
     paddingHorizontal: space(2),
   },
-  send: { minHeight: 52, paddingHorizontal: space(2.5), borderRadius: 16, justifyContent: 'center' },
-  sendText: { color: colors.accentText, fontSize: type.body, fontWeight: '800' },
+  send: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

@@ -6,11 +6,11 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "backgroundColor": "#0A0F1E",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F4F3EF",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tira.assistant",
+      "bundleIdentifier": "com.ustechbridge.tira",
       "infoPlist": {
         "LSApplicationQueriesSchemes": [
           "tel"
@@ -18,9 +18,9 @@
       }
     },
     "android": {
-      "package": "com.tira.assistant",
+      "package": "com.ustechbridge.tira",
       "adaptiveIcon": {
-        "backgroundColor": "#0A0F1E",
+        "backgroundColor": "#123524",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -52,7 +52,7 @@
       [
         "expo-notifications",
         {
-          "color": "#FBBF24",
+          "color": "#123524",
           "defaultChannel": "appointment-reminders"
         }
       ],
@@ -62,9 +62,11 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#0A0F1E"
+          "backgroundColor": "#F4F3EF"
         }
-      ]
+      ],
+      "expo-web-browser",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": false

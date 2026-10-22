@@ -1,14 +1,14 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { store } from '../engine';
-import { confirm } from '../tira/confirm';
-import { devicePlatform } from '../tira/device';
-import { useTira } from '../tira/TiraProvider';
-import { colors, gradients, radius, space, type } from '../tira/theme';
+import { store } from '../../engine';
+import { confirm } from '../../tira/confirm';
+import { devicePlatform } from '../../tira/device';
+import { useTira } from '../../tira/TiraProvider';
+import { colors, fonts, radius, shadow, space, type } from '../../tira/theme';
 
 const USER_ID = 'device-user';
 
@@ -81,15 +81,25 @@ function AppointmentCard({ apt, onDelete }) {
       accessibilityActions={[{ name: 'delete', label: 'Delete appointment' }]}
       onAccessibilityAction={(e) => e.nativeEvent.actionName === 'delete' && onDelete(apt)}
     >
-      <LinearGradient colors={today ? gradients.accent : gradients.card} style={styles.dateTile}>
+      <View style={[styles.dateTile, today && styles.dateTileToday]}>
         <Text style={[styles.tileDay, today && styles.tileInk]}>{today ? 'TODAY' : weekday}</Text>
         <Text style={[styles.tileNum, today && styles.tileInk]}>{d.getDate()}</Text>
-      </LinearGradient>
+      </View>
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={styles.aptTitle}>{doctorLabel(apt.doctorName)}</Text>
         <Text style={styles.aptTime}>{today ? time : `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · ${time}`}</Text>
-        {loc ? <Text style={styles.aptMeta}>📍 {loc}</Text> : null}
-        {reminder ? <Text style={styles.aptMeta}>🔔 {reminder}</Text> : null}
+        {loc ? (
+          <View style={styles.metaRow}>
+            <Ionicons name="location-outline" size={15} color={colors.textMuted} />
+            <Text style={styles.aptMeta}>{loc}</Text>
+          </View>
+        ) : null}
+        {reminder ? (
+          <View style={styles.metaRow}>
+            <Ionicons name="notifications-outline" size={15} color={colors.textMuted} />
+            <Text style={styles.aptMeta}>{reminder}</Text>
+          </View>
+        ) : null}
       </View>
       <Pressable
         onPress={() => onDelete(apt)}
@@ -98,7 +108,7 @@ function AppointmentCard({ apt, onDelete }) {
         accessibilityLabel={`Delete appointment with ${doctorLabel(apt.doctorName)}`}
         style={({ pressed }) => [styles.deleteBtn, pressed && { opacity: 0.6 }]}
       >
-        <Text style={styles.deleteGlyph}>✕</Text>
+        <Ionicons name="trash-outline" size={20} color={colors.textMuted} />
       </Pressable>
     </View>
   );
@@ -112,9 +122,10 @@ function ListCard({ name, list, kind, onToggle, onRemove }) {
   return (
     <View style={styles.listCard}>
       <View style={styles.listHead}>
-        <Text style={styles.listTitle}>
-          {kind === 'shopping' ? '🛒' : '✅'} {titleCase(name)}
-        </Text>
+        <View style={styles.metaRow}>
+          <Ionicons name={kind === 'shopping' ? 'cart-outline' : 'checkbox-outline'} size={20} color={colors.accent} />
+          <Text style={styles.listTitle}>{titleCase(name)}</Text>
+        </View>
         <Text style={styles.listProgress}>
           {done}/{items.length}
         </Text>
@@ -136,7 +147,7 @@ function ListCard({ name, list, kind, onToggle, onRemove }) {
           accessibilityHint="Double tap to check off. Long press to remove."
         >
           <View style={[styles.check, item.completed && styles.checkOn]}>
-            {item.completed ? <Text style={styles.checkMark}>✓</Text> : null}
+            {item.completed ? <Ionicons name="checkmark" size={18} color={colors.accentText} /> : null}
           </View>
           <Text style={[styles.itemText, item.completed && styles.itemDone]}>{item.name}</Text>
         </Pressable>
@@ -227,7 +238,7 @@ export default function TodayScreen() {
   const laterApts = appointments.filter((a) => !isToday(a.dateTime));
 
   return (
-    <LinearGradient colors={gradients.screen} style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
@@ -284,26 +295,26 @@ export default function TodayScreen() {
           ))}
         </Section>
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: space(2), gap: space(3), paddingBottom: space(6) },
+  content: { padding: space(2.5), gap: space(3), paddingBottom: space(6) },
   section: { gap: space(1.5) },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: space(1) },
-  sectionTitle: { color: colors.text, fontSize: type.heading + 2, fontWeight: '800' },
-  sectionSub: { color: colors.textMuted, fontSize: type.tiny, marginTop: -space(1) },
+  sectionTitle: { color: colors.text, fontFamily: fonts.display, fontSize: type.heading + 2 },
+  sectionSub: { color: colors.textMuted, fontFamily: fonts.body, fontSize: type.tiny, marginTop: -space(1) },
   countPill: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.accentSoft,
     borderRadius: radius.pill,
     minWidth: 28,
-    paddingHorizontal: 8,
+    paddingHorizontal: 9,
     height: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  countText: { color: colors.accentText, fontWeight: '800', fontSize: type.tiny },
+  countText: { color: colors.accent, fontFamily: fonts.bodyBold, fontSize: type.tiny },
   emptyCard: {
     borderRadius: radius.card,
     borderWidth: 1.5,
@@ -311,7 +322,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: space(2),
   },
-  emptyText: { color: colors.textMuted, fontSize: type.small, lineHeight: 24 },
+  emptyText: { color: colors.textMuted, fontFamily: fonts.body, fontSize: type.small, lineHeight: 24 },
 
   aptCard: {
     flexDirection: 'row',
@@ -322,23 +333,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: space(1.5),
+    ...shadow.card,
   },
-  dateTile: { width: 68, height: 72, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  tileDay: { color: colors.accent, fontSize: 12, fontWeight: '800', letterSpacing: 1 },
-  tileNum: { color: colors.text, fontSize: 28, fontWeight: '900' },
+  dateTile: {
+    width: 66,
+    height: 70,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.accentSoft,
+  },
+  dateTileToday: { backgroundColor: colors.accent },
+  tileDay: { color: colors.accentMid, fontFamily: fonts.bodyBold, fontSize: 12, letterSpacing: 1 },
+  tileNum: { color: colors.accent, fontFamily: fonts.display, fontSize: 28, lineHeight: 32 },
   tileInk: { color: colors.accentText },
-  aptTitle: { color: colors.text, fontSize: type.body, fontWeight: '800' },
-  aptTime: { color: colors.text, fontSize: type.small },
-  aptMeta: { color: colors.textMuted, fontSize: type.tiny },
+  aptTitle: { color: colors.text, fontFamily: fonts.display, fontSize: type.body },
+  aptTime: { color: colors.text, fontFamily: fonts.body, fontSize: type.small },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  aptMeta: { color: colors.textMuted, fontFamily: fonts.body, fontSize: type.tiny },
   deleteBtn: {
     width: 44,
     height: 44,
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceRaised,
+    backgroundColor: colors.bg,
   },
-  deleteGlyph: { color: colors.textMuted, fontSize: 18, fontWeight: '800' },
 
   listCard: {
     backgroundColor: colors.surface,
@@ -347,10 +367,11 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: space(2),
     gap: space(0.5),
+    ...shadow.card,
   },
   listHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  listTitle: { color: colors.text, fontSize: type.body, fontWeight: '800' },
-  listProgress: { color: colors.textMuted, fontSize: type.small, fontWeight: '700' },
+  listTitle: { color: colors.text, fontFamily: fonts.display, fontSize: type.body },
+  listProgress: { color: colors.textMuted, fontFamily: fonts.bodyBold, fontSize: type.small },
   bar: {
     height: 6,
     borderRadius: 3,
@@ -363,14 +384,13 @@ const styles = StyleSheet.create({
   check: {
     width: 28,
     height: 28,
-    borderRadius: 8,
+    borderRadius: 9,
     borderWidth: 2,
-    borderColor: colors.textMuted,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkOn: { backgroundColor: colors.listening, borderColor: colors.listening },
-  checkMark: { color: colors.accentText, fontSize: 17, fontWeight: '900' },
-  itemText: { color: colors.text, fontSize: type.body, flexShrink: 1 },
+  checkOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+  itemText: { color: colors.text, fontFamily: fonts.body, fontSize: type.body, flexShrink: 1 },
   itemDone: { color: colors.textMuted, textDecorationLine: 'line-through' },
 });
