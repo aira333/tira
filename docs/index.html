@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tira</title>
+<meta name="description" content="Tira is a voice assistant for appointments, reminders, shopping lists, to-dos and rides.">
+<link rel="icon" href="screenshots/icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:wght@600;800&display=swap">
+<style>
+  :root { --bg:#F4F3EF; --card:#FFFFFF; --text:#151917; --muted:#5A605C; --green:#123524; --green2:#1E5A3E; --mint:#7FD1A8; --soft:#E2ECE6; --border:#DEDCD4; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:18px/1.6 "Atkinson Hyperlegible", system-ui, sans-serif; }
+  .hero { background: linear-gradient(135deg, var(--green2), var(--green)); color:#F4F3EF; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 56px 20px; }
+  .hero .wrap { display:flex; gap:40px; align-items:center; flex-wrap:wrap; }
+  .copy { flex: 1 1 380px; min-width: 0; }
+  .brand { font: 800 88px/0.95 "Bricolage Grotesque", system-ui, sans-serif; letter-spacing:-3px; margin:0; }
+  .brand span { color: var(--mint); }
+  .tag { font: 600 28px/1.3 "Bricolage Grotesque", system-ui, sans-serif; color:#CFE6D9; margin: 18px 0 22px; max-width: 460px; }
+  .hero p { color:#E6F2EB; max-width: 480px; }
+  .shot { flex: 0 1 300px; margin: 0 auto; }
+  .shot img { width: 100%; max-width: 300px; border-radius: 36px; border: 12px solid #0B2418; display:block; box-shadow: 0 24px 60px rgba(0,0,0,.35); }
+  h2 { font: 800 30px/1.2 "Bricolage Grotesque", system-ui, sans-serif; margin: 0 0 18px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 20px; }
+  .card h3 { font: 600 21px/1.25 "Bricolage Grotesque", system-ui, sans-serif; margin: 0 0 6px; color: var(--green); }
+  .card p { margin: 0; color: var(--muted); }
+  .say { background: var(--soft); border-radius: 20px; padding: 18px 22px; margin-top: 24px; }
+  .say li { margin: 4px 0; }
+  footer { border-top: 1px solid var(--border); }
+  footer .wrap { padding-block: 28px; display:flex; gap: 22px; flex-wrap: wrap; color: var(--muted); font-size: 16px; }
+  a { color: var(--green); font-weight: 700; }
+</style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <div class="copy">
+        <h1 class="brand">tira<span>.</span></h1>
+        <div class="tag">Your voice assistant for the day ahead.</div>
+        <p>Say "Tira" and ask in your own words. Tira keeps your appointments, reminders, shopping lists and to-dos, and reads every answer aloud. It's built for people who'd rather talk than tap.</p>
+      </div>
+      <div class="shot"><img src="screenshots/talk-home.png" alt="Tira's Talk screen with a personal greeting, the next appointment and a large microphone button"></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h2>What Tira does</h2>
+    <div class="grid">
+      <div class="card"><h3>Appointments</h3><p>Add, find, reschedule and delete by voice, with reminders 15 minutes, 1 hour or 1 day before.</p></div>
+      <div class="card"><h3>Your day, aloud</h3><p>"What's my day?" reads today's appointments, open to-dos and your shopping in one go.</p></div>
+      <div class="card"><h3>Lists</h3><p>Shopping lists for every store and to-do lists for every project. Check items off by voice or tap.</p></div>
+      <div class="card"><h3>Rides</h3><p>Save your transport service once; Tira confirms the details and opens the dialer for you.</p></div>
+      <div class="card"><h3>Accessible</h3><p>Large, high-contrast text designed for low vision, screen-reader labels, and a hands-free mode.</p></div>
+      <div class="card"><h3>Private</h3><p>No ads or tracking. Use it without an account, or sign in with Google to keep your data on any phone.</p></div>
+    </div>
+    <div class="say">
+      <strong>Try saying</strong>
+      <ul>
+        <li>"Tira, add an appointment with Dr. Patel tomorrow at 2 PM"</li>
+        <li>"Add milk and eggs to my Costco shopping list"</li>
+        <li>"What's next?"</li>
+      </ul>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>© 2026 UsTechBridge</span>
+      <a href="privacy/">Privacy Policy</a>
+      <a href="delete-account/">Delete your account</a>
+      <a href="mailto:ustechbridge@gmail.com">ustechbridge@gmail.com</a>
+    </div>
+  </footer>
+</body>
+</html>
